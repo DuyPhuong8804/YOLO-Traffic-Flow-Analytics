@@ -1,0 +1,20 @@
+# Cau hinh chung cho pipeline / dashboard
+
+# Dang tro toi checkpoint SMOKE-TEST (chi train 3 epoch de kiem tra pipeline, mAP50~0.88
+# tren tap valid nho vi qua fit nhanh - KHONG dung de bao cao ket qua chinh thuc).
+# Sau khi train du 100 epoch theo huong dan README, doi lai thanh:
+#   models/vehicle_yolo26/weights/best.pt
+model_path: "models/smoke_test/weights/best.pt"
+tracker: "bytetrack.yaml"   # tracker config co san trong ultralytics (nhe, khong can re-id model)
+conf_threshold: 0.35
+iou_threshold: 0.5
+
+# Kich thuoc buffer cho track bi mat tam nhin (occlusion) truoc khi xoa track_id.
+# Tang gia tri nay giup giam ID switch khi xe may bi che khuat trong dam dong.
+track_buffer: 60
+
+db_path: "Data/traffic_counts.db"
+batch_insert_size: 20      # so ban ghi tich luy truoc khi ghi xuong SQLite 1 lan
+batch_insert_interval_sec: 5  # hoac flush moi 5 giay, tuy dieu kien nao den truoc
+
+default_camera_id: "demo_cam_01"

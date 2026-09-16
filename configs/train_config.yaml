@@ -1,0 +1,31 @@
+# Cau hinh fine-tune YOLO26 cho bai toan detect car/truck/motorbike
+# Dung boi src/detection/train.py
+
+data: "Data/Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26/data.yaml"
+
+# yolo26n (nano) uu tien toc do, phu hop GPU VRAM thap (~4GB) va yeu cau real-time >=15 FPS.
+# Neu can do chinh xac cao hon va co du VRAM, doi sang yolo26s.
+model: "yolo26n.pt"
+
+epochs: 100
+imgsz: 640
+batch: 16          # giam xuong 8 neu bi CUDA out of memory tren GPU 4GB VRAM
+patience: 20        # early stopping neu val loss khong cai thien sau 20 epoch
+device: 0           # 0 = GPU dau tien; doi thanh "cpu" neu khong co GPU
+workers: 4
+
+# Augmentation - tang kha nang chiu duoc dieu kien anh sang/thoi tiet khac nhau
+mosaic: 1.0          # ghep 4 anh, giup model hoc duoc nhieu boi canh/kich thuoc xe hon
+mixup: 0.1           # tron nhe 2 anh, tang tinh tong quat hoa
+hsv_h: 0.015         # jitter hue nhe
+hsv_s: 0.7           # jitter saturation - mo phong dieu kien mau sac khac nhau
+hsv_v: 0.4           # jitter brightness - mo phong troi nang/am u/den
+fliplr: 0.5          # lat ngang ngau nhien (xe di ca 2 chieu duong)
+flipud: 0.0          # KHONG lat doc - camera giao thong luon nhin tu tren xuong 1 chieu co dinh
+degrees: 0.0         # khong xoay - goc camera giam sat co dinh, xoay se khong thuc te
+translate: 0.1
+scale: 0.5
+
+project: "models"
+name: "vehicle_yolo26"
+exist_ok: true

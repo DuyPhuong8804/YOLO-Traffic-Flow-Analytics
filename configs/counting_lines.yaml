@@ -1,0 +1,21 @@
+# Cau hinh duong ke ao (virtual counting line) theo tung camera.
+# Toa do la PIXEL tren khung hinh goc cua video (x, y) - goc (0,0) o tren-trai.
+#
+# Moi camera co the co NHIEU duong ke (vd: 1 duong cho lan vao, 1 duong cho lan ra,
+# hoac nhieu duong kiem tra tai nhieu vi tri). Moi duong ke co 2 huong dem rieng,
+# dat ten theo ngu canh thuc te (vd: "huong_vao" / "huong_ra").
+#
+# Cach xac dinh toa do thuc te: chay scripts/pick_line_coords.py voi video can giam sat,
+# click 2 diem tren khung hinh hien thi de lay toa do pixel chinh xac.
+
+cameras:
+  demo_cam_01:
+    video_source: "Data/videos/demo_traffic_sample.mp4"
+    lines:
+      - name: "line_giua_duong"
+        point1: [0, 260]
+        point2: [640, 260]
+        # Huong A: vector di chuyen co thanh phan "xuong" (y tang) -> tu tren xuong duoi khung hinh
+        # Huong B: nguoc lai, tu duoi len tren khung hinh
+        direction_a_label: "huong_xuong"
+        direction_b_label: "huong_len"

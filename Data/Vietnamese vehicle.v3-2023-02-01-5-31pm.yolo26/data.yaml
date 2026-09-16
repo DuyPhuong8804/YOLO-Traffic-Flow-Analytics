@@ -1,0 +1,14 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+nc: 3
+names:
+- car
+- truck
+- motorbike
+roboflow:
+  workspace: car-classification
+  project: vietnamese-vehicle
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/car-classification/vietnamese-vehicle/dataset/3

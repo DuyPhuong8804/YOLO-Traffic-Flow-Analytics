@@ -1,0 +1,21 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights va database - qua nang/thay doi lien tuc, khong nen commit
+models/**/weights/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Checkpoint YOLO (.pt) - ca pretrained tai tu dong lan model da fine-tune deu nang, tai/train lai duoc
+*.pt
+/weights/
+
+# Dataset lon - tuy chon: bo comment dong duoi neu khong muon commit toan bo dataset
+# Data/
+
+.vscode/
+.idea/

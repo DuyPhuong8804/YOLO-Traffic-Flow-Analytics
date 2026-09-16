@@ -1,0 +1,17 @@
+# QUAN TRONG: Neu may co GPU NVIDIA (vd RTX 3050), CAI TORCH CO CUDA TRUOC bang lenh rieng
+# (torch tren PyPI mac dinh cho Windows la ban CPU-only):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Sau do moi chay: pip install -r requirements.txt
+
+ultralytics>=8.3.0      # bao gom YOLO26, ByteTrack/BoT-SORT tich hop san
+lap>=0.5.12              # can cho ByteTrack (linear assignment IOU matching)
+opencv-python>=4.9.0
+Pillow>=10.0.0
+numpy>=1.26.0
+
+streamlit>=1.36.0        # can >=1.33 de dung st.fragment(run_every=...)
+pandas>=2.2.0
+
+PyYAML>=6.0.1
+
+pytest>=8.0.0             # chay unit test trong tests/
