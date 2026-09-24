@@ -1,0 +1,12 @@
+# Vietnamese vehicle (Roboflow, CC BY 4.0) - nhan da chuan hoa ve 3 lop
+# duong dan tuong doi so voi thu muc goc du an (script train tu chdir ve day)
+path: Data/Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 3
+names:
+  0: car
+  1: truck
+  2: motorbike

@@ -1,0 +1,28 @@
+model:
+  weights: models/vehicle_yolo26/weights/best.pt
+  fallback_weights: yolo26n.pt
+  conf: 0.35
+  iou: 0.5
+  imgsz: 640
+  tracker: bytetrack.yaml
+
+train:
+  data: configs/dataset.yaml
+  base_model: yolo26n.pt
+  epochs: 80
+  imgsz: 640
+  batch: 16
+  patience: 20
+  project: models
+  name: vehicle_yolo26
+
+counting:
+  # Toa do chuan hoa [0..1] theo chieu rong/cao khung hinh
+  line: [[0.05, 0.6], [0.95, 0.6]]
+
+storage:
+  db_path: Data/traffic_analytics.db
+
+api:
+  host: 127.0.0.1
+  port: 8000

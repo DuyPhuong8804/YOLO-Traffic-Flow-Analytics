@@ -1,97 +1,97 @@
+"""Chuan hoa va kiem tra bo du lieu Vietnamese vehicle v3 (Roboflow) ve 3 lop car / truck / motorbike.
+
+    python scripts/prepare_dataset.py            # chi kiem tra + thong ke
+    python scripts/prepare_dataset.py --remap    # anh xa nhan goc 4 lop -> 3 lop (chay lai nhieu lan van an toan)
+
+Nhan goc cua Roboflow: 0=car, 1=motorbike, 2=truck, 3=bus. Bus duoc gop vao truck (nhom xe co lon),
+vi de tai chi yeu cau 3 lop va bus chi chiem ~5.6% so box.
 """
-Script chuan hoa dataset "Vietnamese vehicle v3" (Roboflow) ve dung 3 lop
-car / truck / motorbike theo quy tac gom lop dinh nghia trong
-src/common/class_map.py (RAW_TO_FINAL_CLASS_MAP).
-
-Cach hoat dong:
-    1. Backup toan bo file label goc (.txt) sang Data/processed_labels_backup/
-       (chi backup 1 lan duy nhat, lan chay sau se bo qua neu da co backup
-       -> IDEMPOTENT, chay lai nhieu lan khong lam hong du lieu).
-    2. Doc tung file label trong train/valid/test, thay class id goc bang
-       class id cuoi cung theo RAW_TO_FINAL_CLASS_MAP, ghi de len file goc.
-    3. Cap nhat lai data.yaml: nc=3, names=['car','truck','motorbike'].
-
-Chay:
-    python scripts/prepare_dataset.py
-"""
-
-from pathlib import Path
+import argparse
 import shutil
 import sys
+from collections import Counter
+from pathlib import Path
 
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.common.class_map import RAW_TO_FINAL_CLASS_MAP, CLASS_NAMES_LIST  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
 
-DATASET_ROOT = Path(r"Data/Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26")
-BACKUP_ROOT = Path("Data/processed_labels_backup")
+from traffic.classes import CLASS_NAMES  # noqa: E402
+
+DATASET = ROOT / "Data" / "Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26"
+BACKUP = ROOT / "Data" / "processed_labels_backup"
 SPLITS = ["train", "valid", "test"]
+RAW_NAMES = ["car", "motorbike", "truck", "bus"]
+RAW_TO_FINAL = {0: 0, 1: 2, 2: 1, 3: 1}  # -> index trong CLASS_NAMES
 
 
-def backup_labels_once() -> None:
-    """Sao luu label goc truoc khi ghi de, chi thuc hien neu chua backup."""
-    marker = BACKUP_ROOT / "DONE.marker"
-    if marker.exists():
-        print("[skip] Da co backup tu truoc, bo qua buoc backup.")
-        return
+def remap():
+    marker = BACKUP / "DONE.marker"
+    if not marker.exists():
+        for split in SPLITS:
+            shutil.copytree(DATASET / split / "labels", BACKUP / split / "labels", dirs_exist_ok=True)
+        marker.write_text("backed up\n", encoding="utf-8")
+        print(f"Da sao luu nhan goc vao {BACKUP}")
+
+    # Luon doc tu ban sao luu (nhan goc) nen chay lai nhieu lan khong bi anh xa chong
     for split in SPLITS:
-        src = DATASET_ROOT / split / "labels"
-        dst = BACKUP_ROOT / split / "labels"
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-        print(f"[backup] {src} -> {dst}")
-    marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text("backed up\n", encoding="utf-8")
+        n = 0
+        for src in (BACKUP / split / "labels").glob("*.txt"):
+            lines = [ln.split() for ln in src.read_text(encoding="utf-8").splitlines() if ln.strip()]
+            out = [" ".join([str(RAW_TO_FINAL[int(p[0])]), *p[1:]]) for p in lines]
+            (DATASET / split / "labels" / src.name).write_text("\n".join(out) + "\n", encoding="utf-8")
+            n += 1
+        print(f"[{split}] da anh xa {n} file nhan")
+
+    cfg_path = DATASET / "data.yaml"
+    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    cfg.update(nc=len(CLASS_NAMES), names=CLASS_NAMES)
+    cfg_path.write_text(yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    for cache in DATASET.glob("*/labels.cache"):
+        cache.unlink()
 
 
-def remap_split(split: str) -> tuple[int, int]:
-    """Remap class id cho toan bo file .txt trong 1 split. Tra ve (so file, so box)."""
-    label_dir = DATASET_ROOT / split / "labels"
-    n_files = 0
-    n_boxes = 0
-    for txt_path in label_dir.glob("*.txt"):
-        lines = txt_path.read_text(encoding="utf-8").strip().splitlines()
-        new_lines = []
-        for line in lines:
-            if not line.strip():
-                continue
-            parts = line.split()
-            raw_id = int(parts[0])
-            final_id = int(RAW_TO_FINAL_CLASS_MAP[raw_id])
-            new_lines.append(" ".join([str(final_id), *parts[1:]]))
-            n_boxes += 1
-        txt_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-        n_files += 1
-    return n_files, n_boxes
-
-
-def update_data_yaml() -> None:
-    """Cap nhat data.yaml: nc=3 va ten lop dung theo class_map.py."""
-    yaml_path = DATASET_ROOT / "data.yaml"
-    data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
-    data["nc"] = len(CLASS_NAMES_LIST)
-    data["names"] = CLASS_NAMES_LIST
-    yaml_path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
-    print(f"[update] {yaml_path} -> nc={data['nc']}, names={data['names']}")
-
-
-def main() -> None:
-    already_remapped = (BACKUP_ROOT / "DONE.marker").exists()
-    if already_remapped:
-        print(
-            "[canh bao] Script co ve da chay truoc do (da co backup). "
-            "Neu chay lai remap tren label DA remap se gay sai du lieu "
-            "(vi id 1/2 da la truck/motorbike, khong con la id goc). "
-            "Dang thoat de tranh remap 2 lan."
-        )
-        return
-
-    backup_labels_once()
+def check() -> bool:
+    ok = True
+    total = Counter()
+    print(f"{'split':<6} {'anh':>5} {'nhan':>5} " + " ".join(f"{c:>9}" for c in CLASS_NAMES) + f" {'tong box':>9}")
     for split in SPLITS:
-        n_files, n_boxes = remap_split(split)
-        print(f"[remap] {split}: {n_files} file, {n_boxes} box da chuyen id")
-    update_data_yaml()
-    print("\nHoan tat chuan hoa dataset ve 3 lop: car(0) / truck(1) / motorbike(2)")
+        imgs = {p.stem for p in (DATASET / split / "images").glob("*") if p.suffix.lower() in {".jpg", ".png", ".jpeg"}}
+        labels = list((DATASET / split / "labels").glob("*.txt"))
+        cnt = Counter()
+        for f in labels:
+            for i, ln in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                p = ln.split()
+                if not p:
+                    continue
+                cls, coords = int(p[0]), list(map(float, p[1:]))
+                if len(p) != 5 or not 0 <= cls < len(CLASS_NAMES) or not all(0 <= v <= 1 for v in coords):
+                    print(f"  LOI {f.name}:{i} -> {ln}")
+                    ok = False
+                    continue
+                cnt[cls] += 1
+        missing = imgs - {f.stem for f in labels}
+        if missing:
+            print(f"  [{split}] {len(missing)} anh khong co file nhan (anh nen, khong co xe)")
+        total += cnt
+        print(f"{split:<6} {len(imgs):>5} {len(labels):>5} " + " ".join(f"{cnt[i]:>9}" for i in range(len(CLASS_NAMES)))
+              + f" {sum(cnt.values()):>9}")
+    print(f"{'tong':<6} {'':>5} {'':>5} " + " ".join(f"{total[i]:>9}" for i in range(len(CLASS_NAMES)))
+          + f" {sum(total.values()):>9}")
+    print("Kiem tra nhan: " + ("OK" if ok else "CO LOI"))
+    return ok
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--remap", action="store_true", help="Anh xa nhan goc 4 lop ve 3 lop")
+    args = ap.parse_args()
+    if not DATASET.exists():
+        sys.exit(f"Khong tim thay {DATASET}. Tai bo du lieu tu Roboflow (xem README) va giai nen vao Data/.")
+    if args.remap:
+        remap()
+    sys.exit(0 if check() else 1)
 
 
 if __name__ == "__main__":

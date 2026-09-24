@@ -1,8 +1,8 @@
 task: detect
 mode: train
 model: yolo26n.pt
-data: Data/Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26/data.yaml
-epochs: 100
+data: configs/dataset.yaml
+epochs: 80
 time: null
 patience: 20
 batch: 16
@@ -11,7 +11,7 @@ save: true
 save_period: -1
 cache: false
 device: '0'
-workers: 4
+workers: 2
 project: C:\DUY\TTDN2\YOLO-Traffic-Flow-Analytics\models
 name: vehicle_yolo26
 exist_ok: true
@@ -94,7 +94,7 @@ dlam: 1.0
 nbs: 64
 hsv_h: 0.015
 hsv_s: 0.7
-hsv_v: 0.4
+hsv_v: 0.5
 degrees: 0.0
 translate: 0.1
 scale: 0.5
@@ -104,7 +104,7 @@ flipud: 0.0
 fliplr: 0.5
 bgr: 0.0
 mosaic: 1.0
-mixup: 0.1
+mixup: 0.0
 cutmix: 0.0
 copy_paste: 0.0
 copy_paste_mode: flip

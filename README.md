@@ -1,146 +1,172 @@
 # YOLO Traffic Flow Analytics
 
-Hệ thống nhận diện, theo dõi, đếm và phân loại phương tiện giao thông (car/truck/motorbike) từ video camera giám sát cố định, phục vụ thống kê lưu lượng giao thông theo thời gian.
+Hệ thống **nhận diện → theo dõi → đếm → phân loại** phương tiện giao thông (xe con, xe tải, xe máy) từ video/camera,
+lưu kết quả vào CSDL và trực quan hoá trên dashboard.
 
-Đề tài thực tập — Trung tâm thống kê và nền tảng số, Cục Chuyển đổi số, Bộ Nông nghiệp và Môi trường.
+> Đề tài thực tập — Trung tâm Thống kê và Nền tảng số, Cục Chuyển đổi số, Bộ Nông nghiệp và Môi trường.
+> Sinh viên: Bùi Phương Duy (DCCTKH67A) · GVHD: Ngô Hùng Long · Hướng dẫn tại đơn vị: Mai Đức Anh
+>
+> Tài liệu tổng hợp toàn bộ dự án theo 10 tuần (kèm hình minh hoạ & tài liệu tham khảo):
+> [docs/BAO_CAO_DU_AN.md](docs/BAO_CAO_DU_AN.md)
 
-## 1. Kiến trúc tổng thể
+![Kiến trúc](docs/images/01_kien_truc_he_thong.png)
+
+## 1. Kiến trúc
 
 ```
-Video (file) → Detect (YOLO26) → Track (ByteTrack) → Count (đường kẻ ảo)
-                                                            │
-                                                            ▼
-                                      Storage (SQLite, batch insert)
-                                                            │
-                                                            ▼
-                                          Dashboard (Streamlit, đọc thẳng SQLite)
+Video / Webcam / RTSP
+      │
+      ▼
+[1] Phát hiện ── YOLO26n fine-tune (3 lớp: car, truck, motorbike)
+      ▼
+[2] Theo dõi ─── ByteTrack / BoT-SORT (gán ID cho từng xe)
+      ▼
+[3] Đếm ──────── xe cắt vạch đếm → +1 theo loại & chiều (mỗi ID chỉ đếm 1 lần,
+      │           loại xe = lớp được "bỏ phiếu" nhiều nhất qua các khung hình)
+      ▼
+[4] Lưu trữ ──── SQLite: sessions + vehicle_events (loại xe, chiều, thời điểm)
+      ▼
+[5] API ──────── FastAPI  (/stats/summary, /stats/timeseries, /events, /sessions)
+[6] Dashboard ── Streamlit (phân tích video trực tiếp + thống kê + đánh giá mô hình)
 ```
 
 ## 2. Cấu trúc thư mục
 
 ```
-├── Data/                        # dataset + video mẫu (không commit weights/db)
-│   ├── Vietnamese vehicle.v3.../ # dataset gốc (Roboflow), đã remap về 3 lớp
-│   ├── videos/                   # video test (demo_traffic_sample.mp4)
-│   └── class_inspection/         # ảnh minh hoạ xác minh class mapping
-├── models/                       # weights sau khi train (models/vehicle_yolo26/weights/best.pt)
+├── app/                      # Giao diện demo Streamlit
+│   ├── streamlit_app.py      #   điểm vào, điều hướng các trang
+│   ├── ui.py                 #   CSS + thành phần giao diện dùng chung
+│   └── views/                #   overview · analyze · dashboard · model
+├── src/traffic/              # Thư viện lõi
+│   ├── pipeline.py           #   video → detect → track → count → DB
+│   ├── counter.py            #   logic đếm qua vạch (thuần Python, có unit test)
+│   ├── storage.py            #   SQLite + truy vấn thống kê
+│   ├── api.py                #   FastAPI
+│   ├── drawing.py            #   vẽ box, vạch đếm, bảng số liệu lên khung hình
+│   ├── classes.py            #   tên lớp, nhãn tiếng Việt, màu, ánh xạ COCO
+│   └── config.py
+├── scripts/
+│   ├── prepare_dataset.py    # chuẩn hoá nhãn 4 lớp → 3 lớp + kiểm tra/thống kê bộ dữ liệu
+│   ├── download_videos.py    # tải lại các video giao thông Việt Nam để thử nghiệm
+│   ├── train.py              # huấn luyện YOLO26
+│   ├── evaluate.py           # đánh giá trên tập test + đo FPS pipeline
+│   ├── benchmark.py          # so sánh tốc độ/độ chính xác theo imgsz, PyTorch vs ONNX
+│   ├── make_figures.py       # sinh hình minh hoạ cho báo cáo (docs/images)
+│   └── run_video.py          # chạy pipeline từ dòng lệnh
 ├── configs/
-│   ├── train_config.yaml         # hyperparameter training
-│   ├── counting_lines.yaml       # toạ độ đường kẻ ảo theo camera_id
-│   └── app_config.yaml           # đường dẫn model/DB, tracker, ngưỡng conf/iou
-├── src/
-│   ├── common/                   # class mapping, config loader, vẽ overlay
-│   ├── detection/                # train.py, evaluate.py, detector.py
-│   ├── tracking/                 # wrapper ByteTrack qua Ultralytics
-│   ├── counting/                 # thuật toán đếm qua đường kẻ ảo (lõi hệ thống)
-│   ├── storage/                  # SQLite + batch insert + truy vấn thống kê (stats.py)
-│   ├── dashboard/                # Streamlit app.py (đọc thẳng SQLite, không qua API)
-│   └── pipeline.py               # orchestrator nối toàn bộ luồng xử lý
-├── scripts/                      # prepare_dataset.py, inspect_classes.py, pick_line_coords.py
-├── tests/                        # unit test cho logic đếm + storage (không cần GPU/model)
-├── requirements.txt
-└── README.md
+│   ├── config.yaml           # model, ngưỡng, tracker, vạch đếm mặc định, đường dẫn DB
+│   └── dataset.yaml          # cấu hình bộ dữ liệu cho Ultralytics
+├── models/vehicle_yolo26/    # kết quả huấn luyện (weights/best.pt, results.csv, biểu đồ)
+├── tests/                    # pytest (unit + tích hợp)
+├── docs/                     # tài liệu tổng hợp dự án + hình minh hoạ
+├── Data/                     # bộ dữ liệu + video + CSDL  (KHÔNG đưa lên GitHub, xem mục 3)
+└── run_demo.bat              # khởi chạy nhanh demo trên Windows
 ```
 
 ## 3. Cài đặt
 
-```powershell
-# 1. Tạo/kích hoạt virtualenv (đã có sẵn venv/ trong repo)
-venv\Scripts\activate
+Yêu cầu: Python 3.10+ (đã thử với 3.11), khuyến nghị GPU NVIDIA.
 
-# 2. QUAN TRỌNG: cài torch có CUDA TRƯỚC (bản PyPI mặc định trên Windows là CPU-only)
-#    Kiểm tra CUDA driver bằng `nvidia-smi`, chọn index-url phù hợp (vd cu121 cho CUDA 12.1+)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+```bash
+python -m venv venv
+venv\Scripts\activate                 # Linux/macOS: source venv/bin/activate
 
-# 3. Cài các thư viện còn lại
+# PyTorch có CUDA (bỏ --index-url nếu chỉ dùng CPU)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
 ```
 
-Kiểm tra GPU đã được nhận:
-```powershell
-python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+### Chuẩn bị dữ liệu
+
+Thư mục `Data/` không được đưa lên GitHub (dung lượng lớn), cần tự chuẩn bị sau khi clone:
+
+1. Tải bộ dữ liệu [Vietnamese vehicle v3](https://universe.roboflow.com/car-classification/vietnamese-vehicle/dataset/3)
+   (Roboflow, định dạng YOLO), giải nén thành `Data/Vietnamese vehicle.v3-2023-02-01-5-31pm.yolo26/`.
+2. Chuẩn hoá nhãn về 3 lớp và kiểm tra:
+   ```bash
+   python scripts/prepare_dataset.py --remap
+   ```
+3. Tải video thử nghiệm: `python scripts/download_videos.py`
+
+Mô hình đã huấn luyện `models/vehicle_yolo26/weights/best.pt` có sẵn trong repo nên có thể chạy demo ngay
+mà không cần bước 1–2.
+
+## 4. Chạy demo
+
+**Cách nhanh (Windows):** nhấp đúp `run_demo.bat` → trình duyệt mở `http://localhost:8501`.
+
+**Hoặc chạy thủ công:**
+
+```bash
+streamlit run app/streamlit_app.py                        # giao diện demo
+uvicorn traffic.api:app --app-dir src --port 8000         # API, tài liệu tại http://localhost:8000/docs
 ```
 
-## 4. Chuẩn bị dữ liệu
+### Các trang trong giao diện
 
-Dataset gốc (`Data/Vietnamese vehicle.v3.../`) có 4 lớp: car(0), motorbike(1), truck(2), bus(3) — đã xác minh trực quan (xem `Data/class_inspection/`). Script sau sẽ **gộp bus → truck** và remap về 3 lớp cuối cùng `car(0)/truck(1)/motorbike(2)` (đã chạy sẵn, an toàn khi chạy lại — có backup và idempotent):
+| Trang | Chức năng |
+| --- | --- |
+| **Tổng quan** | Giới thiệu hệ thống, luồng xử lý, tổng số xe đã đếm, trạng thái mô hình/GPU |
+| **Phân tích video** | Chọn video mẫu / tải video lên / webcam / RTSP → kéo thanh trượt đặt vạch đếm (xem trước ngay) → bấm **Bắt đầu phân tích**: video có box + ID chạy trực tiếp, số xe theo loại & chiều, FPS, danh sách xe vừa qua vạch. Tải về video kết quả. |
+| **Dashboard thống kê** | Lọc theo phiên / khoảng ngày / mức gom nhóm (10 giây → ngày). KPI, biểu đồ lưu lượng theo thời gian, cơ cấu loại xe, theo chiều, tích luỹ; bảng chi tiết & **xuất CSV**; quản lý/xoá phiên |
+| **Đánh giá mô hình** | mAP, Precision, Recall (tổng & từng lớp), FPS pipeline, đường cong huấn luyện, ma trận nhầm lẫn, PR curve |
 
-```powershell
-python scripts/prepare_dataset.py
+## 5. Huấn luyện & đánh giá
+
+```bash
+python scripts/train.py                 # mặc định: yolo26n.pt, 80 epoch, imgsz 640, batch 16
+python scripts/evaluate.py              # đánh giá tập test + FPS → models/vehicle_yolo26/eval_test.json
+python scripts/benchmark.py             # tốc độ/độ chính xác theo imgsz, PyTorch vs ONNX → benchmark.json
+python scripts/make_figures.py          # sinh lại hình minh hoạ trong docs/images
 ```
 
-> Quy tắc gộp lớp: bus được xếp vào nhóm "phương tiện cỡ lớn" cùng truck do đặc điểm kích thước/tốc độ/mức chiếm dụng làn đường tương đồng — xem docstring trong `src/common/class_map.py`.
+Bộ dữ liệu: *Vietnamese vehicle* (Roboflow, CC BY 4.0) — 1235 train / 156 valid / 156 test ảnh, đã chuẩn hoá về
+3 lớp `car`, `truck`, `motorbike` (nhãn gốc được sao lưu ở `Data/processed_labels_backup`).
 
-Nếu dùng dataset khác, chạy `scripts/inspect_classes.py` trước để xác minh lại thứ tự class id bằng ảnh minh hoạ, tránh gán nhầm lớp (đây là lỗi âm thầm rất dễ xảy ra vì `data.yaml` của Roboflow xuất ra không luôn ghi đúng tên lớp).
+Nếu chưa có `models/vehicle_yolo26/weights/best.pt`, hệ thống tự dùng `yolo26n.pt` pretrained COCO
+(`bus` được gộp vào xe tải, `motorcycle` → xe máy).
 
-## 5. Training
+### Video thử nghiệm (`Data/videos/`)
 
-```powershell
-python -m src.detection.train --config configs/train_config.yaml
+Các video `vn_*.mp4` tải từ [Pexels](https://www.pexels.com/license/) (miễn phí, được phép sử dụng), bản 720p:
+
+| Tệp | Nội dung | Nguồn |
+| --- | --- | --- |
+| `vn_giao_thong_ban_ngay.mp4` | Giao lộ ban ngày, nhiều xe máy + ô tô | [Pexels 33383214](https://www.pexels.com/video/bustling-vietnam-traffic-on-sunny-day-33383214/) |
+| `vn_nga_tu_xe_may_o_to.mp4` | Ngã tư, xe máy + ô tô | [Pexels 30247347](https://www.pexels.com/video/bustling-city-intersection-with-motorbikes-and-cars-30247347/) |
+| `vn_hcm_nga_tu_ban_dem.mp4` | Ngã tư TP.HCM ban đêm | [Pexels 33486917](https://www.pexels.com/video/busy-night-intersection-in-ho-chi-minh-city-33486917/) |
+| `vn_ket_xe_xe_may_o_to.mp4` | Kẹt xe, mật độ xe máy rất cao | [Pexels 39221451](https://www.pexels.com/video/dense-urban-traffic-jam-with-motorbikes-and-cars-39221451/) |
+| `vn_hanoi_pho_xe_may_xe_buyt.mp4` | Đường phố, camera di chuyển theo dòng xe | [Pexels 33383212](https://www.pexels.com/video/bustling-hanoi-street-with-motorbikes-and-buses-33383212/) |
+| `vn_cao_toc_flycam.mp4` | Quốc lộ quay từ flycam (góc trên cao) | [Pexels 32971521](https://www.pexels.com/video/aerial-view-of-traffic-on-busy-vietnamese-highway-32971521/) |
+
+Hai video cuối nằm ngoài phạm vi đề tài (camera không cố định / góc nhìn trên cao), dùng để minh hoạ giới hạn của mô hình.
+
+## 6. Chạy từ dòng lệnh
+
+```bash
+python scripts/run_video.py Data/videos/vn_giao_thong_ban_ngay.mp4 --output Data/outputs/demo.mp4 --show
+python scripts/run_video.py 0 --line 0.1 0.5 0.9 0.5                 # webcam, vạch ngang giữa khung hình
+python scripts/run_video.py video.mp4 --start-time "2026-09-01 07:00"  # gán thời điểm thực cho video
 ```
 
-Cấu hình mặc định dùng `yolo26n.pt` (nano) — ưu tiên tốc độ để đạt real-time ≥15 FPS trên GPU VRAM thấp (vd RTX 3050 4GB). Nếu cần độ chính xác cao hơn và đủ VRAM, đổi `model: yolo26s.pt` trong `configs/train_config.yaml`.
+## 7. API
 
-Đánh giá mô hình (mục tiêu mAP@0.5 ≥ 0.7):
-```powershell
-python -m src.detection.evaluate --weights models/vehicle_yolo26/weights/best.pt --split test
+| Endpoint | Mô tả |
+| --- | --- |
+| `GET /health` | Kiểm tra trạng thái |
+| `GET /classes` | Danh sách lớp |
+| `GET /sessions` | Danh sách phiên phân tích + số xe |
+| `DELETE /sessions/{id}` | Xoá một phiên |
+| `GET /stats/summary?start=&end=&session_id=` | Tổng số xe theo loại và theo chiều |
+| `GET /stats/timeseries?interval=minute\|hour\|day` | Chuỗi thời gian số xe theo loại |
+| `GET /events?limit=100` | Danh sách từng xe đã đếm |
+
+## 8. Kiểm thử
+
+```bash
+pytest
 ```
 
-## 6. Chạy thử pipeline (detect + track + count) trên video mẫu
-
-Sau khi có `models/vehicle_yolo26/weights/best.pt`, cập nhật `model_path` trong `configs/app_config.yaml` (mặc định đã trỏ sẵn đến đường dẫn này), rồi chạy nhanh bằng Python:
-
-```python
-from src.pipeline import TrafficPipeline
-import cv2
-
-pipeline = TrafficPipeline(camera_id="demo_cam_01")
-for result in pipeline.run():
-    cv2.imshow("preview", result.frame)
-    if cv2.waitKey(1) == 27:
-        break
-```
-
-Video mẫu `Data/videos/demo_traffic_sample.mp4`: clip "Traffic Flow In The Highway" (tác giả Mike Bird, nguồn [Pexels](https://www.pexels.com/video/traffic-flow-in-the-highway-2103099/), Pexels License — miễn phí sử dụng). Quay từ **camera cố định trên cao**, cảnh xe chạy 2 chiều trên đường cao tốc nhiều làn, phù hợp để test cơ chế detect/track/count qua đường kẻ ảo theo cả 2 hướng. Dài 60s/1800 frame.
-
-> Lưu ý: video này KHÔNG dùng để fine-tune (không có nhãn, và bối cảnh là đường cao tốc nước ngoài, khác đặc điểm giao thông Việt Nam) — chỉ dùng để kiểm thử cơ chế tracking/đếm. Xem mục 9 để biết cách bổ sung video thực tế Việt Nam phục vụ kiểm thử độ chính xác.
-
-Để lấy toạ độ đường kẻ ảo cho 1 video/camera mới:
-```powershell
-python scripts/pick_line_coords.py --video "duong/dan/video.mp4"
-```
-rồi dán toạ độ in ra vào `configs/counting_lines.yaml`.
-
-## 7. Chạy Dashboard
-
-```powershell
-streamlit run src/dashboard/app.py
-```
-- Tab **"Video trực tiếp"**: chạy pipeline ngay trong Streamlit, xem preview video có bounding box + đường kẻ ảo + số đếm.
-- Tab **"Thống kê"**: đọc thẳng từ SQLite (`Data/traffic_counts.db`) — không cần chạy thêm service nào khác, tự làm mới mỗi 10s.
-
-## 8. Kiểm thử độ chính xác đếm
-
-Vì thuật toán đếm chỉ đúng khi cấu hình đường kẻ ảo phù hợp với góc quay thực tế, cần kiểm thử bằng **đếm tay đối chiếu (ground-truth thủ công)** trên video thực tế của đơn vị, không chỉ dựa vào mAP của detector:
-
-1. **Chuẩn bị 3–5 clip ngắn (30–60 giây)** đại diện các kịch bản:
-   - Lưu lượng thưa (dễ, baseline).
-   - Lưu lượng đông, nhiều xe máy đi sát nhau (kiểm tra occlusion).
-   - Điều kiện ánh sáng khác nhau (ban ngày / chiều tối / ngược sáng).
-   - Góc camera khác nhau nếu triển khai nhiều điểm.
-2. Xem từng clip bằng mắt, **đếm tay thủ công** số lượng xe mỗi loại đi qua theo từng hướng → ghi thành bảng ground-truth.
-3. Chạy hệ thống trên cùng clip, so sánh số đếm hệ thống vs ground-truth:
-   - Accuracy đếm = `1 - |predicted - actual| / actual` (tính riêng từng loại xe và từng hướng).
-   - Theo dõi riêng 2 loại lỗi: **đếm trùng** (predicted > actual, thường do ID switch) và **đếm sót** (predicted < actual, thường do track bị mất khi occlusion quá lâu vượt `track_buffer`).
-4. Nếu accuracy thấp ở kịch bản đông xe máy: tăng `track_buffer` trong `configs/app_config.yaml`, giảm `conf_threshold` một chút để bắt được xe bị che khuất một phần, hoặc cân nhắc `yolo26s` thay vì `yolo26n`.
-
-Unit test cho riêng phần thuật toán đếm (không cần video/model thật, chạy được ngay):
-```powershell
-pytest tests/ -v
-```
-
-## 9. Hiệu năng
-
-- Mục tiêu ≥15 FPS. `yolo26n` + GPU tầm trung (vd RTX 3050) thường đạt real-time ở `imgsz=640`.
-- YOLO26 loại bỏ bước NMS hậu xử lý truyền thống (kiến trúc end-to-end one-to-one), giảm độ trễ so với các bản YOLO trước — quan trọng khi mật độ xe máy cao làm số lượng box cần NMS tăng mạnh.
-- Nếu không đạt FPS mục tiêu: giảm `imgsz`, dùng `yolo26n` thay vì `s/m`, hoặc giảm tần suất chạy detect (detect mỗi N frame, dùng Kalman/track dự đoán các frame giữa).
+Gồm unit test cho logic đếm (đi qua vạch theo 2 chiều, không đếm trùng khi xe rung trên vạch, ngoài đoạn vạch,
+bỏ phiếu lớp), test tích hợp SQLite + API và test end-to-end chạy pipeline thật trên video mẫu
+(tự bỏ qua nếu thiếu video/weights).
