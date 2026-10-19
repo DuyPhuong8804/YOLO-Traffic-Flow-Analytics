@@ -18,3 +18,20 @@ docs/
 .vscode/
 .idea/
 .claude/
+
+# Local credentials and tool caches
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.ruff_cache/
+.mypy_cache/
+
+# Generated training previews; keep batch 0 for the model dashboard
+models/**/train_batch*.jpg
+models/**/val_batch[1-9]*.jpg
+models/**/labels.jpg
+
+# Experiment summaries (JSON/CSV/YAML) are versioned; plots are reproducible
+models/exp_*/**/*.png
+models/exp_*/**/*.jpg
