@@ -50,6 +50,15 @@ Video / Webcam / RTSP
 │   ├── download_videos.py    # tải lại các video giao thông Việt Nam để thử nghiệm
 │   ├── train.py              # huấn luyện YOLO26
 │   ├── evaluate.py           # đánh giá trên tập test + đo FPS pipeline
+│   ├── analyze_map.py        # phân tích vì sao mAP@0.5:0.95 < mAP@0.5 (theo ngưỡng IoU, kích thước xe)
+│   ├── analyze_params.py     # căn cứ chọn tham số: conf (P/R/F1), NMS iou, conf khi tracking
+│   ├── compare_baseline.py   # so sánh với YOLO26n COCO pretrained (cách phổ biến ở các dự án mã nguồn mở)
+│   ├── compare_trackers.py   # so sánh ByteTrack và BoT-SORT trên video Việt Nam
+│   ├── compare_splits.py     # so sánh chỉ số trên tập train / valid / test (kiểm tra overfitting)
+│   ├── check_leakage.py      # kiểm tra trùng lặp / rò rỉ giữa train và test (MD5, dHash, bố cục cảnh)
+│   ├── measure_latency.py    # đo độ trễ API (HTTP thật), trang dashboard (AppTest), nhịp khung hình khi phân tích
+│   ├── check_count.py        # so số xe đếm với số đếm tay trên một video, thử nhiều mức conf → count_check.json
+│   ├── verify_report_numbers.py # đo lại các số liệu trong báo cáo (ma trận nhầm lẫn, số xe đếm, IoU baseline COCO...)
 │   ├── benchmark.py          # so sánh tốc độ/độ chính xác theo imgsz, PyTorch vs ONNX
 │   ├── make_figures.py       # sinh hình minh hoạ cho báo cáo (docs/images)
 │   └── run_video.py          # chạy pipeline từ dòng lệnh
@@ -116,6 +125,15 @@ uvicorn traffic.api:app --app-dir src --port 8000         # API, tài liệu t�
 ```bash
 python scripts/train.py                 # mặc định: yolo26n.pt, 80 epoch, imgsz 640, batch 16
 python scripts/evaluate.py              # đánh giá tập test + FPS → models/vehicle_yolo26/eval_test.json
+python scripts/analyze_map.py           # AP theo ngưỡng IoU, IoU theo kích thước xe → map_analysis.json + hình 19–21
+python scripts/analyze_params.py        # căn cứ chọn conf / NMS iou / conf khi tracking → param_analysis.json + hình 22
+python scripts/compare_baseline.py      # fine-tune vs COCO pretrained → baseline_compare.json + hình 23
+python scripts/compare_trackers.py      # ByteTrack vs BoT-SORT → tracker_compare.json
+python scripts/compare_splits.py        # chỉ số train / valid / test → split_compare.json
+python scripts/check_leakage.py         # trùng lặp train/test → leakage_check.json (+ 2 hình trong docs/images)
+python scripts/measure_latency.py       # độ trễ API, dashboard, nhịp khung hình → latency.json (~2 phút)
+python scripts/check_count.py --hand car=8 truck=1 motorbike=21   # sai số đếm so với đếm tay → count_check.json
+python scripts/verify_report_numbers.py # đo lại các số liệu phụ trong báo cáo, in ra màn hình
 python scripts/benchmark.py             # tốc độ/độ chính xác theo imgsz, PyTorch vs ONNX → benchmark.json
 python scripts/make_figures.py          # sinh lại hình minh hoạ trong docs/images
 ```

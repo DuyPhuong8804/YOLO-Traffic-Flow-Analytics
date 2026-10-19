@@ -20,11 +20,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--weights", default=cfg["model"]["weights"])
     ap.add_argument("--video", default="Data/videos/demo_traffic_sample.mp4")
+    ap.add_argument("--imgsz", type=int, default=cfg["model"]["imgsz"], help="nen trung imgsz luc train")
     args = ap.parse_args()
 
     weights = resolve(args.weights)
     model = YOLO(str(weights))
-    m = model.val(data=cfg["train"]["data"], split="test", imgsz=cfg["model"]["imgsz"], plots=True,
+    m = model.val(data=cfg["train"]["data"], split="test", imgsz=args.imgsz, plots=True,
                   project=str(weights.parents[1]), name="eval_test", exist_ok=True, verbose=False)
 
     per_class = {}
@@ -34,7 +35,7 @@ def main():
 
     fps = None
     if Path(args.video).exists():
-        pipe = TrafficPipeline(model=model)
+        pipe = TrafficPipeline(model=model, imgsz=args.imgsz)
         frames, total_fps = 0, 0.0
         for res in pipe.run(args.video, cfg["counting"]["line"]):
             frames += 1
@@ -44,6 +45,8 @@ def main():
 
     out = {
         "split": "test",
+        "weights": str(args.weights),
+        "imgsz": args.imgsz,
         "precision": m.box.mp, "recall": m.box.mr, "mAP50": m.box.map50, "mAP50_95": m.box.map,
         "per_class": per_class,
         "speed_ms": m.speed,

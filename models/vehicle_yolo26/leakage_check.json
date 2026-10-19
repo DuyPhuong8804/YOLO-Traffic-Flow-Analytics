@@ -1,0 +1,119 @@
+{
+  "so_anh": {
+    "train": 1235,
+    "valid": 156,
+    "test": 156
+  },
+  "nguong_gan_trung_lap": 10,
+  "hash": "dHash 16x16 = 256 bit",
+  "md5_trung": {
+    "test_voi_train": 0,
+    "valid_voi_train": 0,
+    "test_voi_valid": 0
+  },
+  "ten_goc_trung": {
+    "test_voi_train": 0,
+    "valid_voi_train": 0,
+    "test_voi_valid": 0
+  },
+  "md5_trung_trong_train": 0,
+  "ten_goc_duy_nhat_trong_train": 1235,
+  "moc_train_voi_train": {
+    "min": 1,
+    "p5": 18.0,
+    "median": 51.0,
+    "so_anh_<=_0": 0,
+    "so_anh_<=_2": 2,
+    "so_anh_<=_5": 2,
+    "so_anh_<=_10": 12,
+    "so_anh_<=_20": 82,
+    "so_anh_<=_30": 210
+  },
+  "valid_voi_train": {
+    "min": 11,
+    "p5": 16.75,
+    "median": 50.0,
+    "so_anh_<=_0": 0,
+    "so_anh_<=_2": 0,
+    "so_anh_<=_5": 0,
+    "so_anh_<=_10": 0,
+    "so_anh_<=_20": 12,
+    "so_anh_<=_30": 25
+  },
+  "valid_lat_ngang_voi_train": {
+    "min": 56,
+    "p5": 71.0,
+    "median": 92.0,
+    "so_anh_<=_0": 0,
+    "so_anh_<=_2": 0,
+    "so_anh_<=_5": 0,
+    "so_anh_<=_10": 0,
+    "so_anh_<=_20": 0,
+    "so_anh_<=_30": 0
+  },
+  "test_voi_train": {
+    "min": 11,
+    "p5": 21.5,
+    "median": 58.0,
+    "so_anh_<=_0": 0,
+    "so_anh_<=_2": 0,
+    "so_anh_<=_5": 0,
+    "so_anh_<=_10": 0,
+    "so_anh_<=_20": 8,
+    "so_anh_<=_30": 16
+  },
+  "test_lat_ngang_voi_train": {
+    "min": 55,
+    "p5": 68.75,
+    "median": 90.0,
+    "so_anh_<=_0": 0,
+    "so_anh_<=_2": 0,
+    "so_anh_<=_5": 0,
+    "so_anh_<=_10": 0,
+    "so_anh_<=_20": 0,
+    "so_anh_<=_30": 0
+  },
+  "contact_sheet": "docs\\images\\24_cap_anh_test_gan_train_nhat.jpg",
+  "anh_nghi_trung": {
+    "valid": [],
+    "test": []
+  },
+  "tuong_quan_bo_cuc": {
+    "test_voi_train_trung_vi": 0.8929252624511719,
+    "test_p10": 0.6745507121086121,
+    "train_voi_train_trung_vi": 0.8931004405021667
+  },
+  "contact_sheet_mau_ngau_nhien": "docs\\images\\25_mau_ngau_nhien_test_va_anh_train_gan_nhat.jpg",
+  "mau_ngau_nhien_test": [
+    "1433_jpg.rf.1bc72410e75edf1037ad57ec2c27a024.jpg",
+    "405_jpg.rf.bc900889bbec1dc91229e698710cf58f.jpg",
+    "250_jpg.rf.d9cd534e2339ef183494a2da5d0bd42b.jpg",
+    "1051_jpg.rf.d39bebc9c3aaaff4bb7da3de4866c18d.jpg",
+    "630_png.rf.3e11f45302dbca76bc0eea9caf961f1e.jpg",
+    "432_jpg.rf.dd14602b53a0f5d7c06d5e7a56ff0e13.jpg",
+    "705_png.rf.dc274002c056e038e52395b30a713b17.jpg",
+    "85_jpg.rf.8dfa0ce6abc9851e3f0d0f8ebad070b4.jpg",
+    "690_png.rf.f59d60052e3214d387bb8721745c3e41.jpg",
+    "1102_jpg.rf.430b51bc6cb1f1c2dcd2fa57e8f2c81e.jpg",
+    "968_jpg.rf.985a28d79106d6be54ae1bc2bfdcafda.jpg",
+    "1372_jpg.rf.d14b8c67052809d715bc55443e02397f.jpg",
+    "282_jpg.rf.a28fcb507f43609a4c78ac8e0e519c9c.jpg",
+    "1026_jpg.rf.da40f26f0680a2cb7e3fa48032280634.jpg",
+    "1242_jpg.rf.a23241abb4edd13d11bc4f3b9c5e8e9c.jpg",
+    "513_png.rf.560f1a3762762ca2f49d2c19bdaa07bb.jpg"
+  ],
+  "map_test_nua_giong_train_nhat": {
+    "so_anh": 78,
+    "mAP50": 0.9479458180146096,
+    "mAP50_95": 0.5967602414989259,
+    "precision": 0.8888000476297332,
+    "recall": 0.8876733211378881
+  },
+  "map_test_nua_it_giong_train": {
+    "so_anh": 78,
+    "mAP50": 0.910835806619247,
+    "mAP50_95": 0.6335238655304816,
+    "precision": 0.8080902595429958,
+    "recall": 0.8903654882916053
+  }
+}

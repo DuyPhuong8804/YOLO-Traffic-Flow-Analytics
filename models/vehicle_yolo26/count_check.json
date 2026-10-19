@@ -1,0 +1,149 @@
+{
+  "video": "vn_giao_thong_ban_ngay.mp4",
+  "vach": [
+    [
+      0.05,
+      0.6
+    ],
+    [
+      0.95,
+      0.6
+    ]
+  ],
+  "dem_tay": {
+    "car": 8,
+    "truck": 1,
+    "motorbike": 21
+  },
+  "conf_mac_dinh": 0.35,
+  "ket_qua": {
+    "0.10": {
+      "theo_lop": {
+        "car": {
+          "he_thong": 5,
+          "dem_tay": 8,
+          "lech": -3,
+          "sai_so_tuyet_doi": 3,
+          "sai_so_phan_tram": 37.5
+        },
+        "truck": {
+          "he_thong": 4,
+          "dem_tay": 1,
+          "lech": 3,
+          "sai_so_tuyet_doi": 3,
+          "sai_so_phan_tram": 300.0
+        },
+        "motorbike": {
+          "he_thong": 21,
+          "dem_tay": 21,
+          "lech": 0,
+          "sai_so_tuyet_doi": 0,
+          "sai_so_phan_tram": 0.0
+        }
+      },
+      "tong": {
+        "he_thong": 30,
+        "dem_tay": 30,
+        "lech": 0,
+        "sai_so_phan_tram": 0.0
+      },
+      "tong_sai_so_tuyet_doi_theo_lop": 6
+    },
+    "0.20": {
+      "theo_lop": {
+        "car": {
+          "he_thong": 6,
+          "dem_tay": 8,
+          "lech": -2,
+          "sai_so_tuyet_doi": 2,
+          "sai_so_phan_tram": 25.0
+        },
+        "truck": {
+          "he_thong": 4,
+          "dem_tay": 1,
+          "lech": 3,
+          "sai_so_tuyet_doi": 3,
+          "sai_so_phan_tram": 300.0
+        },
+        "motorbike": {
+          "he_thong": 20,
+          "dem_tay": 21,
+          "lech": -1,
+          "sai_so_tuyet_doi": 1,
+          "sai_so_phan_tram": 4.761904761904762
+        }
+      },
+      "tong": {
+        "he_thong": 30,
+        "dem_tay": 30,
+        "lech": 0,
+        "sai_so_phan_tram": 0.0
+      },
+      "tong_sai_so_tuyet_doi_theo_lop": 6
+    },
+    "0.25": {
+      "theo_lop": {
+        "car": {
+          "he_thong": 6,
+          "dem_tay": 8,
+          "lech": -2,
+          "sai_so_tuyet_doi": 2,
+          "sai_so_phan_tram": 25.0
+        },
+        "truck": {
+          "he_thong": 4,
+          "dem_tay": 1,
+          "lech": 3,
+          "sai_so_tuyet_doi": 3,
+          "sai_so_phan_tram": 300.0
+        },
+        "motorbike": {
+          "he_thong": 20,
+          "dem_tay": 21,
+          "lech": -1,
+          "sai_so_tuyet_doi": 1,
+          "sai_so_phan_tram": 4.761904761904762
+        }
+      },
+      "tong": {
+        "he_thong": 30,
+        "dem_tay": 30,
+        "lech": 0,
+        "sai_so_phan_tram": 0.0
+      },
+      "tong_sai_so_tuyet_doi_theo_lop": 6
+    },
+    "0.35": {
+      "theo_lop": {
+        "car": {
+          "he_thong": 4,
+          "dem_tay": 8,
+          "lech": -4,
+          "sai_so_tuyet_doi": 4,
+          "sai_so_phan_tram": 50.0
+        },
+        "truck": {
+          "he_thong": 2,
+          "dem_tay": 1,
+          "lech": 1,
+          "sai_so_tuyet_doi": 1,
+          "sai_so_phan_tram": 100.0
+        },
+        "motorbike": {
+          "he_thong": 18,
+          "dem_tay": 21,
+          "lech": -3,
+          "sai_so_tuyet_doi": 3,
+          "sai_so_phan_tram": 14.285714285714285
+        }
+      },
+      "tong": {
+        "he_thong": 24,
+        "dem_tay": 30,
+        "lech": -6,
+        "sai_so_phan_tram": 20.0
+      },
+      "tong_sai_so_tuyet_doi_theo_lop": 8
+    }
+  }
+}

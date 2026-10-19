@@ -1,0 +1,234 @@
+{
+  "cau_hinh": {
+    "conf": 0.35,
+    "iou": 0.5,
+    "imgsz": 640,
+    "tracker": "bytetrack.yaml"
+  },
+  "nguong_tin_cay": {
+    "valid": {
+      "conf_f1_max": 0.4544544544544544,
+      "f1_max": 0.8735399972581493,
+      "p_at_f1_max": 0.8695634705295264,
+      "r_at_f1_max": 0.8780996201299957,
+      "tai_cac_nguong": {
+        "0.1": {
+          "precision": 0.7060452939501686,
+          "recall": 0.9572713936491546,
+          "f1": 0.8118506146214576,
+          "per_class_recall": {
+            "car": 0.9611307420494699,
+            "truck": 0.9620853080568721,
+            "motorbike": 0.9485981308411215
+          }
+        },
+        "0.25": {
+          "precision": 0.8015134947535537,
+          "recall": 0.9368442329474723,
+          "f1": 0.8634882643300044,
+          "per_class_recall": {
+            "car": 0.9434628975265018,
+            "truck": 0.943127962085308,
+            "motorbike": 0.9239418392306074
+          }
+        },
+        "0.35": {
+          "precision": 0.830417341429591,
+          "recall": 0.9171505433962487,
+          "f1": 0.8713066670344755,
+          "per_class_recall": {
+            "car": 0.9293286219081273,
+            "truck": 0.9146919431279621,
+            "motorbike": 0.9074310651526565
+          }
+        },
+        "0.5": {
+          "precision": 0.8846369566595556,
+          "recall": 0.8631021790908916,
+          "f1": 0.8733187607918022,
+          "per_class_recall": {
+            "car": 0.9045936395759717,
+            "truck": 0.8720379146919431,
+            "motorbike": 0.8126749830047599
+          }
+        }
+      }
+    },
+    "test": {
+      "conf_f1_max": 0.46446446446446443,
+      "f1_max": 0.868789739424754,
+      "p_at_f1_max": 0.871303451404614,
+      "r_at_f1_max": 0.8667576985873352,
+      "tai_cac_nguong": {
+        "0.1": {
+          "precision": 0.7148981738279242,
+          "recall": 0.943463601101675,
+          "f1": 0.8117494983472295,
+          "per_class_recall": {
+            "car": 0.9487179487179487,
+            "truck": 0.9515418502202643,
+            "motorbike": 0.9301310043668122
+          }
+        },
+        "0.25": {
+          "precision": 0.7922000862282564,
+          "recall": 0.9098341227691208,
+          "f1": 0.846538196742206,
+          "per_class_recall": {
+            "car": 0.9267399267399268,
+            "truck": 0.9162995594713657,
+            "motorbike": 0.8864628820960698
+          }
+        },
+        "0.35": {
+          "precision": 0.8344584706330194,
+          "recall": 0.8874217082547787,
+          "f1": 0.8600816073940701,
+          "per_class_recall": {
+            "car": 0.9136638146133008,
+            "truck": 0.8986784140969163,
+            "motorbike": 0.8499228960541193
+          }
+        },
+        "0.5": {
+          "precision": 0.8820109619291406,
+          "recall": 0.8523971024068925,
+          "f1": 0.8666028249537504,
+          "per_class_recall": {
+            "car": 0.8754578754578755,
+            "truck": 0.8854625550660793,
+            "motorbike": 0.7962708766967227
+          }
+        }
+      }
+    }
+  },
+  "nms": {
+    "tap_test": {
+      "nms_iou_0.5": {
+        "mAP50": 0.9283556337835658,
+        "mAP50_95": 0.6127349987213105,
+        "postprocess_ms": 1.1736884615367251,
+        "inference_ms": 5.25289294872868
+      },
+      "nms_iou_0.7": {
+        "mAP50": 0.9281381930816432,
+        "mAP50_95": 0.6142330030788513,
+        "postprocess_ms": 1.2703237180176075,
+        "inference_ms": 6.1760141025399955
+      },
+      "khong_nms": {
+        "mAP50": 0.9006244560009432,
+        "mAP50_95": 0.5971068688716533,
+        "postprocess_ms": 0.21832564104839455,
+        "inference_ms": 5.584407692321036
+      }
+    },
+    "box_trung_tren_video": {
+      "vn_nga_tu_xe_may_o_to.mp4": {
+        "iou_0.5": {
+          "frames": 323,
+          "box_moi_khung": 6.164086687306502,
+          "cap_box_trung": 0
+        },
+        "iou_0.7": {
+          "frames": 323,
+          "box_moi_khung": 6.523219814241486,
+          "cap_box_trung": 129
+        }
+      },
+      "vn_ket_xe_xe_may_o_to.mp4": {
+        "iou_0.5": {
+          "frames": 238,
+          "box_moi_khung": 12.134453781512605,
+          "cap_box_trung": 1
+        },
+        "iou_0.7": {
+          "frames": 238,
+          "box_moi_khung": 12.302521008403362,
+          "cap_box_trung": 42
+        }
+      }
+    }
+  },
+  "tracking_conf": {
+    "vn_nga_tu_xe_may_o_to.mp4": {
+      "conf_0.35": {
+        "frames": 323,
+        "xe_dem_duoc": 1,
+        "theo_lop": {
+          "truck": 1
+        },
+        "so_id": 63,
+        "do_dai_track_trung_vi": 6.0,
+        "id_ngan_duoi_10_khung": 39,
+        "box_co_id_moi_khung": 5.606811145510836
+      },
+      "conf_0.1": {
+        "frames": 323,
+        "xe_dem_duoc": 4,
+        "theo_lop": {
+          "car": 1,
+          "truck": 3
+        },
+        "so_id": 77,
+        "do_dai_track_trung_vi": 8.0,
+        "id_ngan_duoi_10_khung": 39,
+        "box_co_id_moi_khung": 6.904024767801857
+      }
+    },
+    "vn_ket_xe_xe_may_o_to.mp4": {
+      "conf_0.35": {
+        "frames": 238,
+        "xe_dem_duoc": 5,
+        "theo_lop": {
+          "car": 4,
+          "truck": 1
+        },
+        "so_id": 64,
+        "do_dai_track_trung_vi": 8.5,
+        "id_ngan_duoi_10_khung": 33,
+        "box_co_id_moi_khung": 11.722689075630251
+      },
+      "conf_0.1": {
+        "frames": 238,
+        "xe_dem_duoc": 6,
+        "theo_lop": {
+          "car": 6
+        },
+        "so_id": 73,
+        "do_dai_track_trung_vi": 25.0,
+        "id_ngan_duoi_10_khung": 24,
+        "box_co_id_moi_khung": 15.907563025210084
+      }
+    },
+    "vn_giao_thong_ban_ngay.mp4": {
+      "conf_0.35": {
+        "frames": 1037,
+        "xe_dem_duoc": 24,
+        "theo_lop": {
+          "motorbike": 18,
+          "car": 4,
+          "truck": 2
+        },
+        "so_id": 179,
+        "do_dai_track_trung_vi": 10.0,
+        "id_ngan_duoi_10_khung": 89,
+        "box_co_id_moi_khung": 6.568948891031822
+      },
+      "conf_0.1": {
+        "frames": 1037,
+        "xe_dem_duoc": 30,
+        "theo_lop": {
+          "motorbike": 21,
+          "car": 5,
+          "truck": 4
+        },
+        "so_id": 214,
+        "do_dai_track_trung_vi": 10.0,
+        "id_ngan_duoi_10_khung": 102,
+        "box_co_id_moi_khung": 7.567984570877531
+      }
+    }
+  }
+}

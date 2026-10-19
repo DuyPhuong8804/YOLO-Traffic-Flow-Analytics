@@ -1,0 +1,130 @@
+{
+  "tap_test": {
+    "coco_pretrained": {
+      "mAP50": 0.40790367107744263,
+      "mAP50_95": 0.23801886493888622,
+      "per_class": {
+        "car": {
+          "mAP50": 0.6448576715327478,
+          "mAP50_95": 0.3931245212860252
+        },
+        "truck": {
+          "mAP50": 0.5102306881947832,
+          "mAP50_95": 0.30318589953882946
+        },
+        "motorbike": {
+          "mAP50": 0.06862265350479696,
+          "mAP50_95": 0.017746173991804205
+        }
+      }
+    },
+    "fine_tune": {
+      "mAP50": 0.9069863957259318,
+      "mAP50_95": 0.6026737838515849,
+      "per_class": {
+        "car": {
+          "mAP50": 0.9338239916723127,
+          "mAP50_95": 0.7066104948633878
+        },
+        "truck": {
+          "mAP50": 0.939136491179052,
+          "mAP50_95": 0.6908712533699637
+        },
+        "motorbike": {
+          "mAP50": 0.8479987043264305,
+          "mAP50_95": 0.4105396033214033
+        }
+      }
+    }
+  },
+  "video": {
+    "vn_giao_thong_ban_ngay.mp4": {
+      "coco_pretrained": {
+        "frames": 1037,
+        "box_moi_khung": 7.742526518804243,
+        "so_id": 196,
+        "xe_dem_duoc": 17,
+        "theo_lop": {
+          "motorbike": 14,
+          "car": 3
+        }
+      },
+      "fine_tune": {
+        "frames": 1037,
+        "box_moi_khung": 6.568948891031822,
+        "so_id": 179,
+        "xe_dem_duoc": 24,
+        "theo_lop": {
+          "motorbike": 18,
+          "car": 4,
+          "truck": 2
+        }
+      }
+    },
+    "vn_nga_tu_xe_may_o_to.mp4": {
+      "coco_pretrained": {
+        "frames": 323,
+        "box_moi_khung": 6.863777089783282,
+        "so_id": 82,
+        "xe_dem_duoc": 2,
+        "theo_lop": {
+          "car": 1,
+          "motorbike": 1
+        }
+      },
+      "fine_tune": {
+        "frames": 323,
+        "box_moi_khung": 5.606811145510836,
+        "so_id": 63,
+        "xe_dem_duoc": 1,
+        "theo_lop": {
+          "truck": 1
+        }
+      }
+    },
+    "vn_hcm_nga_tu_ban_dem.mp4": {
+      "coco_pretrained": {
+        "frames": 768,
+        "box_moi_khung": 5.104166666666667,
+        "so_id": 86,
+        "xe_dem_duoc": 14,
+        "theo_lop": {
+          "motorbike": 10,
+          "car": 4
+        }
+      },
+      "fine_tune": {
+        "frames": 768,
+        "box_moi_khung": 5.119791666666667,
+        "so_id": 121,
+        "xe_dem_duoc": 16,
+        "theo_lop": {
+          "car": 4,
+          "motorbike": 10,
+          "truck": 2
+        }
+      }
+    },
+    "vn_ket_xe_xe_may_o_to.mp4": {
+      "coco_pretrained": {
+        "frames": 238,
+        "box_moi_khung": 9.357142857142858,
+        "so_id": 39,
+        "xe_dem_duoc": 3,
+        "theo_lop": {
+          "car": 3
+        }
+      },
+      "fine_tune": {
+        "frames": 238,
+        "box_moi_khung": 11.722689075630251,
+        "so_id": 64,
+        "xe_dem_duoc": 5,
+        "theo_lop": {
+          "car": 4,
+          "truck": 1
+        }
+      }
+    }
+  }
+}

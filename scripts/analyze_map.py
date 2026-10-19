@@ -1,5 +1,5 @@
 """Phan tich vi sao mAP@0.5:0.95 thap hon mAP@0.5 tren tap test -> models/vehicle_yolo26/map_analysis.json
-va 2 hinh docs/images/19_ap_theo_nguong_iou.png, 20_iou_theo_kich_thuoc.png.
+va 3 hinh docs/images/19_ap_theo_nguong_iou.png, 20_iou_theo_kich_thuoc.png, 21_vi_du_box_xe_may.jpg.
 
 Gom 4 phan:
   1. AP cua tung lop o tung nguong IoU 0.50..0.95 (model.val -> box.all_ap).
@@ -10,6 +10,7 @@ Gom 4 phan:
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -17,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 os.chdir(ROOT)
 
+import cv2  # noqa: E402
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
@@ -81,9 +83,11 @@ def localization_by_size(model, imgsz, conf):
             g, p = gxyxy[gcls == c], pxyxy[pcls == c]
             ious = iou_matrix(g, p)
             best = ious.max(axis=1) if ious.shape[1] else np.zeros(len(g))
-            for box, b in zip(g, best):
+            best_j = ious.argmax(axis=1) if ious.shape[1] else [None] * len(g)
+            for box, b, j in zip(g, best, best_j):
                 side = float(np.sqrt((box[2] - box[0]) * (box[3] - box[1])) * scale)
-                records.append({"cls": CLASS_NAMES[c], "side_px": side, "best_iou": float(b)})
+                records.append({"cls": CLASS_NAMES[c], "side_px": side, "best_iou": float(b), "img": img_path,
+                                "gt": box, "pred": p[j] if j is not None else None})
     return records
 
 
@@ -153,15 +157,51 @@ def fig_iou_by_size(loc):
         bars = ax.bar([p + (i - 1) * width for p in range(len(names))], vals, width, color=CLASS_COLORS_HEX[cls],
                       label=CLASS_LABELS_VI[cls])
         ax.bar_label(bars, labels=[f"{v:.2f}\nn={c}" if c else "" for v, c in zip(vals, counts)], fontsize=8)
-    ax.axhline(0.75, ls="--", color="#EF4444", lw=1.1)
-    ax.text(len(names) - 0.5, 0.76, "IoU 0,75", color="#EF4444", fontsize=9, ha="right", va="bottom")
+    ax.axhline(0.75, ls="--", color="#EF4444", lw=1.1, label="Ngưỡng IoU 0,75")
     ax.set_xticks(range(len(names)), [f"Cạnh box {n}" for n in names])
     ax.set_ylabel("IoU trung vị (box dự đoán vs box nhãn)")
     ax.set_ylim(0, 1.12)
-    ax.legend(frameon=False, ncol=3, loc="upper left")
+    ax.legend(frameon=False, ncol=4, loc="upper left")
     ax.set_title("Độ khớp vị trí theo kích thước xe (ảnh letterbox 640 px, tập kiểm thử)", loc="left",
                  weight="bold", fontsize=11)
     fig.savefig(OUT / "20_iou_theo_kich_thuoc.png", facecolor="white")
+    plt.close(fig)
+
+
+def crop_tile(r, size=220):
+    img = cv2.imread(str(r["img"]))
+    x1, y1, x2, y2 = r["gt"]
+    pad = 0.6 * max(x2 - x1, y2 - y1)
+    h, w = img.shape[:2]
+    cx1, cy1, cx2, cy2 = (int(max(0, x1 - pad)), int(max(0, y1 - pad)), int(min(w, x2 + pad)), int(min(h, y2 + pad)))
+    cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 200, 0), 2)  # nhan: xanh la
+    if r["pred"] is not None:
+        px1, py1, px2, py2 = map(int, r["pred"])
+        cv2.rectangle(img, (px1, py1), (px2, py2), (0, 0, 230), 2)  # du doan: do
+    tile = cv2.resize(img[cy1:cy2, cx1:cx2], (size, size))
+    cv2.rectangle(tile, (0, 0), (92, 24), (0, 0, 0), -1)
+    cv2.putText(tile, f"IoU {r['best_iou']:.2f}", (5, 17), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1,
+                cv2.LINE_AA)
+    return cv2.cvtColor(tile, cv2.COLOR_BGR2RGB)
+
+
+def fig_box_examples(records):
+    """Hang tren: xe con ngau nhien; hang duoi: xe may co IoU thap nhat (van phat hien duoc, IoU > 0.3)."""
+    mid = [r for r in records if 40 <= r["side_px"] < 128]
+    rng = np.random.default_rng(0)
+    cars = [r for r in mid if r["cls"] == "car"]
+    cars = [cars[i] for i in rng.choice(len(cars), 6, replace=False)]
+    bikes = sorted([r for r in mid if r["cls"] == "motorbike" and r["best_iou"] > 0.3], key=lambda r: r["best_iou"])[:6]
+    fig, axes = plt.subplots(2, 6, figsize=(15, 5.6))
+    for ax, r in zip(axes.flat, cars + bikes):
+        ax.imshow(crop_tile(r))
+        ax.axis("off")
+    axes[0, 0].set_title("Xe con (chọn ngẫu nhiên)", loc="left", weight="bold", fontsize=11)
+    axes[1, 0].set_title("Xe máy có IoU thấp nhất (vẫn được phát hiện)", loc="left", weight="bold", fontsize=11)
+    fig.suptitle("Box nhãn (xanh lá) và box dự đoán (đỏ) — xe cùng cỡ 40–128 px trên tập kiểm thử", x=0.01,
+                 ha="left", weight="bold")
+    fig.tight_layout(h_pad=2.5)
+    fig.savefig(OUT / "21_vi_du_box_xe_may.jpg", facecolor="white", pil_kwargs={"quality": 88})
     plt.close(fig)
 
 
@@ -199,6 +239,8 @@ def main():
             "inference_ms": float(mm.speed["inference"]),
         }
         print(f"   imgsz {s}: mAP50 {mm.box.map50:.3f}  mAP50-95 {mm.box.map:.3f}")
+    for d in RUN.glob("analyze_val_*"):  # thu muc tam do model.val tao ra
+        shutil.rmtree(d, ignore_errors=True)
 
     out = {"weights": str(args.weights), "imgsz_goc": base, "ap_theo_nguong_iou": ap_by_iou,
            "kich_thuoc_box": sizes, "do_khop_vi_tri_theo_kich_thuoc": loc, "danh_gia_theo_imgsz": by_imgsz}
@@ -208,6 +250,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     fig_ap_vs_iou(all_ap)
     fig_iou_by_size(loc)
+    fig_box_examples(records)
     print(json.dumps(out, indent=2, ensure_ascii=False))
     print("->", path)
 

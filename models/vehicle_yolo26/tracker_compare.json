@@ -1,0 +1,119 @@
+{
+  "conf": 0.35,
+  "iou": 0.5,
+  "imgsz": 640,
+  "videos": {
+    "vn_nga_tu_xe_may_o_to.mp4": {
+      "bytetrack.yaml": {
+        "frames": 323,
+        "xe_dem_duoc": 1,
+        "theo_lop": {
+          "truck": 1
+        },
+        "so_id": 63,
+        "do_dai_track_trung_vi": 6.0,
+        "id_ngan_duoi_10_khung": 39,
+        "box_co_id_moi_khung": 5.606811145510836,
+        "fps": 29.240594335086655
+      },
+      "botsort.yaml": {
+        "frames": 323,
+        "xe_dem_duoc": 1,
+        "theo_lop": {
+          "truck": 1
+        },
+        "so_id": 59,
+        "do_dai_track_trung_vi": 6.0,
+        "id_ngan_duoi_10_khung": 35,
+        "box_co_id_moi_khung": 5.643962848297214,
+        "fps": 30.0773130347666
+      }
+    },
+    "vn_ket_xe_xe_may_o_to.mp4": {
+      "bytetrack.yaml": {
+        "frames": 238,
+        "xe_dem_duoc": 5,
+        "theo_lop": {
+          "car": 4,
+          "truck": 1
+        },
+        "so_id": 64,
+        "do_dai_track_trung_vi": 8.5,
+        "id_ngan_duoi_10_khung": 33,
+        "box_co_id_moi_khung": 11.722689075630251,
+        "fps": 38.64404163028387
+      },
+      "botsort.yaml": {
+        "frames": 238,
+        "xe_dem_duoc": 5,
+        "theo_lop": {
+          "car": 4,
+          "truck": 1
+        },
+        "so_id": 63,
+        "do_dai_track_trung_vi": 9.0,
+        "id_ngan_duoi_10_khung": 32,
+        "box_co_id_moi_khung": 11.735294117647058,
+        "fps": 28.24453486941566
+      }
+    },
+    "vn_giao_thong_ban_ngay.mp4": {
+      "bytetrack.yaml": {
+        "frames": 1037,
+        "xe_dem_duoc": 24,
+        "theo_lop": {
+          "motorbike": 18,
+          "car": 4,
+          "truck": 2
+        },
+        "so_id": 179,
+        "do_dai_track_trung_vi": 10.0,
+        "id_ngan_duoi_10_khung": 89,
+        "box_co_id_moi_khung": 6.568948891031822,
+        "fps": 39.52039632410154
+      },
+      "botsort.yaml": {
+        "frames": 1037,
+        "xe_dem_duoc": 24,
+        "theo_lop": {
+          "motorbike": 18,
+          "car": 3,
+          "truck": 3
+        },
+        "so_id": 176,
+        "do_dai_track_trung_vi": 9.0,
+        "id_ngan_duoi_10_khung": 89,
+        "box_co_id_moi_khung": 6.5805207328833175,
+        "fps": 30.681437750280015
+      }
+    },
+    "vn_cao_toc_flycam.mp4": {
+      "bytetrack.yaml": {
+        "frames": 600,
+        "xe_dem_duoc": 7,
+        "theo_lop": {
+          "truck": 4,
+          "car": 3
+        },
+        "so_id": 76,
+        "do_dai_track_trung_vi": 4.0,
+        "id_ngan_duoi_10_khung": 52,
+        "box_co_id_moi_khung": 2.56,
+        "fps": 41.96472256579912
+      },
+      "botsort.yaml": {
+        "frames": 600,
+        "xe_dem_duoc": 7,
+        "theo_lop": {
+          "truck": 4,
+          "car": 3
+        },
+        "so_id": 75,
+        "do_dai_track_trung_vi": 4.0,
+        "id_ngan_duoi_10_khung": 52,
+        "box_co_id_moi_khung": 2.5683333333333334,
+        "fps": 31.358974723756898
+      }
+    }
+  }
+}
