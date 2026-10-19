@@ -76,3 +76,36 @@ def pill(cls: str) -> str:
 @st.cache_resource
 def get_db() -> TrafficDB:
     return TrafficDB(resolve(load_config()["storage"]["db_path"]))
+
+
+def _release_run(holder: dict):
+    """Goi khi phien trinh duyet bi ngat (dong tab): dong phien phan tich dang tam dung de CSDL ghi gio ket thuc."""
+    holder["released"] = True
+    run = holder.get("run")
+    if run and run.get("gen") is not None:
+        try:
+            run["gen"].close()
+        except ValueError:  # generator dang chay o luong khac; vong lap trong analyze.py se tu dong khi bi ngat
+            pass
+
+
+@st.cache_resource(scope="session", on_release=_release_run)
+def run_holder() -> dict:
+    return {}
+
+
+def set_run(run: dict):
+    st.session_state["run"] = run
+    run_holder()["run"] = run
+
+
+def finalize_run():
+    """Dong phien phan tich dang giu (tam dung hoac dang chay) de CSDL ghi gio ket thuc, so khung, FPS.
+
+    Dong generator cua pipeline -> khoi `finally` trong TrafficPipeline.run chay end_session."""
+    run = st.session_state.get("run")
+    if not run or run.get("gen") is None:
+        return
+    run["gen"].close()
+    run["gen"] = None
+    run["status"], run["ended"] = "done", "stopped"

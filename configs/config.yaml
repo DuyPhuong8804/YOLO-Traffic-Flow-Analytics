@@ -22,7 +22,3 @@ counting:
 
 storage:
   db_path: Data/traffic_analytics.db
-
-api:
-  host: 127.0.0.1
-  port: 8000

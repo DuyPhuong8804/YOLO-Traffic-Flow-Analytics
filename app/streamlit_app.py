@@ -8,7 +8,7 @@ for p in (ROOT / "src", ROOT / "app"):
 
 import streamlit as st  # noqa: E402
 
-from ui import inject_css  # noqa: E402
+from ui import finalize_run, inject_css  # noqa: E402
 
 st.set_page_config(page_title="Traffic Flow Analytics", page_icon=":material/traffic:", layout="wide")
 inject_css()
@@ -24,4 +24,8 @@ with st.sidebar:
     st.markdown("### Traffic Flow Analytics")
     st.caption("Nhận diện · Theo dõi · Đếm · Phân loại phương tiện bằng YOLO26 + ByteTrack")
 
-st.navigation(pages).run()
+page = st.navigation(pages)
+# Phien phan tich dang tam dung chi duoc luu khi roi khoi trang Phan tich video
+if page.url_path != "analyze":
+    finalize_run()
+page.run()

@@ -25,11 +25,34 @@ def load_model(weights: str | Path | None = None) -> YOLO:
     return YOLO(str(weights or default_weights()))
 
 
+LIVE_PREFIXES = ("rtsp://", "rtsps://", "http://", "https://")
+LIVE_TIMEOUT_MS = 5000  # thoi gian cho toi da khi mo luong va khi doc khung hinh tu camera
+
+
+class SourceError(RuntimeError):
+    """Khong mo/doc duoc nguon video; thong bao da viet san cho nguoi dung."""
+
+
+def is_live_source(source) -> bool:
+    return str(source).isdigit() or str(source).startswith(LIVE_PREFIXES)
+
+
 def open_source(source):
-    src = int(source) if str(source).isdigit() else str(source)
-    cap = cv2.VideoCapture(src)
+    src = str(source)
+    if src.isdigit():
+        cap = cv2.VideoCapture(int(src))
+        error = f"Không mở được webcam số {src}. Kiểm tra webcam đã cắm và không bị ứng dụng khác chiếm."
+    elif src.startswith(LIVE_PREFIXES):
+        # Mac dinh FFmpeg cho ~30 giay moi bao loi, giao dien se dung hinh; dat gioi han ngan hon
+        cap = cv2.VideoCapture(src, cv2.CAP_FFMPEG, [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, LIVE_TIMEOUT_MS,
+                                                     cv2.CAP_PROP_READ_TIMEOUT_MSEC, LIVE_TIMEOUT_MS])
+        error = "Không kết nối được camera. Kiểm tra địa chỉ luồng, mạng và tài khoản/mật khẩu."
+    else:
+        cap = cv2.VideoCapture(src)
+        error = f"Không mở được tệp video: {Path(src).name}"
     if not cap.isOpened():
-        raise RuntimeError(f"Không mở được nguồn video: {source}")
+        cap.release()
+        raise SourceError(error)
     return cap
 
 
@@ -38,7 +61,8 @@ def read_first_frame(source) -> np.ndarray:
     ok, frame = cap.read()
     cap.release()
     if not ok:
-        raise RuntimeError("Không đọc được khung hình đầu tiên")
+        raise SourceError("Không đọc được hình từ nguồn video." if not is_live_source(source)
+                          else "Kết nối được nhưng camera không gửi hình.")
     return frame
 
 
@@ -88,10 +112,15 @@ class TrafficPipeline:
     def run(self, source, line_norm, start_time: datetime | None = None, output_path: str | None = None,
             max_frames: int | None = None):
         cap = open_source(source)
+        is_live = is_live_source(source)
+        # Doc khung dau truoc khi tao phien: nguon khong gui hinh thi khong de lai phien rong trong CSDL
+        ok, frame = cap.read()
+        if not ok and is_live:
+            cap.release()
+            raise SourceError("Kết nối được nhưng camera không gửi hình.")
         w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         video_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
-        is_live = str(source).isdigit() or str(source).startswith(("rtsp://", "http://", "https://"))
         start_time = start_time or datetime.now()
 
         a = (int(line_norm[0][0] * w), int(line_norm[0][1] * h))
@@ -120,7 +149,8 @@ class TrafficPipeline:
         frame_idx, t0, fps, flash = 0, time.perf_counter(), 0.0, 0
         try:
             while True:
-                ok, frame = cap.read()
+                if frame_idx > 0:
+                    ok, frame = cap.read()
                 if not ok or (max_frames and frame_idx >= max_frames):
                     break
                 tick = time.perf_counter()

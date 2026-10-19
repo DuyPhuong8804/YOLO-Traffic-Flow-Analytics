@@ -10,8 +10,8 @@ from traffic import PROJECT_ROOT
 from traffic.classes import CLASS_COLORS_HEX, CLASS_LABELS_VI
 from traffic.config import load_config
 from traffic.drawing import preview_with_line
-from traffic.pipeline import TrafficPipeline, default_weights, load_model, read_first_frame
-from ui import get_db, kpi, pill
+from traffic.pipeline import TrafficPipeline, default_weights, is_live_source, load_model, read_first_frame
+from ui import finalize_run, get_db, kpi, pill, run_holder, set_run
 
 SAMPLE_DIR = PROJECT_ROOT / "Data" / "videos"
 UPLOAD_DIR = PROJECT_ROOT / "Data" / "uploads"
@@ -19,6 +19,11 @@ OUTPUT_DIR = PROJECT_ROOT / "Data" / "outputs"
 VIDEO_EXT = {".mp4", ".avi", ".mov", ".mkv"}
 DISPLAY_MAX_W = 960
 TRACKERS = {"bytetrack.yaml": "ByteTrack", "botsort.yaml": "BoT-SORT"}
+EMPTY_HINT = {
+    "Video mẫu": "Chọn một video mẫu ở thanh bên trái để bắt đầu.",
+    "Tải video lên": "Tải lên một video ở thanh bên trái để bắt đầu.",
+    "Camera IP (RTSP)": "Nhập địa chỉ luồng RTSP ở thanh bên trái để bắt đầu.",
+}
 
 
 @st.cache_resource(show_spinner="Đang tải mô hình YOLO26...")
@@ -43,7 +48,8 @@ def mmss(seconds: float) -> str:
 
 
 st.title("Phân tích video")
-st.caption("Chọn nguồn video, đặt vạch đếm rồi bấm **Bắt đầu phân tích**. Kết quả được lưu tự động vào CSDL.")
+st.caption("Chọn nguồn video, đặt vạch đếm rồi bấm **Bắt đầu phân tích**. Có thể **Dừng** rồi **Tiếp tục**; phiên được "
+           "lưu vào CSDL khi video kết thúc, khi đổi video hoặc khi rời trang này.")
 
 # ---------------- Sidebar: cau hinh ----------------
 with st.sidebar:
@@ -102,16 +108,63 @@ with st.sidebar:
         d = st.date_input("Ngày quay video", now.date())
         t = st.time_input("Giờ bắt đầu", dtime(now.hour, now.minute))
         st.caption("Thời điểm xe qua vạch = giờ bắt đầu + vị trí trong video (webcam/RTSP dùng giờ thực).")
-        save_video = st.checkbox("Lưu video kết quả (.mp4)", value=True)
+        save_video = st.checkbox("Lưu video kết quả (.mp4)", value=False, help="Tệp kết quả được lưu trong Data/outputs. Chỉ dùng khi video đầu vào là tệp hoặc webcam.")
+
+# ---------------- Phien phan tich ----------------
+# st.session_state["run"] giu phien qua cac lan chay lai cua trang: generator cua pipeline + anh chup ket qua gan nhat.
+# status: running | paused | done | error. Dung -> paused: generator van song, CSDL chua dong phien (chua ghi gio ket
+# thuc). Phien chi duoc dong khi video ket thuc, doi nguon, bam Bat dau lai, hoac roi trang (xem streamlit_app.py).
+run = st.session_state.get("run")
+if run and run["gen"] is not None and run["source"] != source:
+    finalize_run()
 
 if not source:
-    st.info("Chọn hoặc tải lên một video ở thanh bên trái để bắt đầu.", icon=":material/arrow_back:")
+    st.info(EMPTY_HINT.get(mode, "Chọn nguồn video ở thanh bên trái để bắt đầu."), icon=":material/arrow_back:")
     st.stop()
 
+
+def request_start():
+    finalize_run()
+    st.session_state["start_requested"] = True
+
+
+def request_pause():
+    r = st.session_state["run"]
+    if r["live"]:  # webcam/RTSP chay lien tuc, khong tam dung duoc nen Dung = ket thuc phien
+        finalize_run()
+    else:
+        r["status"] = "paused"
+
+
+def request_resume():
+    st.session_state["run"]["status"] = "running"
+
+
+if st.session_state.pop("start_requested", False):
+    pipe = TrafficPipeline(model=get_model(str(default_weights())), conf=conf, imgsz=imgsz, tracker=tracker, db=get_db())
+    output = None
+    if save_video:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        output = str(OUTPUT_DIR / f"ketqua_{datetime.now():%Y%m%d_%H%M%S}.mp4")
+    run = {
+        "gen": pipe.run(source, line, start_time=datetime.combine(d, t), output_path=output),
+        "source": source, "live": is_live_source(source), "status": "running", "ended": None, "error": None,
+        "output": output, "feed": deque(maxlen=10), "snap": None,
+    }
+    set_run(run)
+
+status = run["status"] if run and run["source"] == source else "idle"
+
 # ---------------- Bo cuc chinh ----------------
-b1, b2, _ = st.columns([1.3, 0.8, 4])
-start = b1.button("Bắt đầu phân tích", type="primary", icon=":material/play_arrow:", width="stretch")
-b2.button("Dừng", icon=":material/stop:", width="stretch")
+b1, b2, b3, _ = st.columns([1.3, 0.8, 1, 3.4])
+b1.button("Bắt đầu lại" if status == "paused" else "Bắt đầu phân tích", type="primary", icon=":material/play_arrow:",
+          width="stretch", disabled=status == "running", on_click=request_start, key="btn_start")
+b2.button("Dừng", icon=":material/stop:", width="stretch", disabled=status != "running", on_click=request_pause,
+          key="btn_pause")
+b3.button("Tiếp tục", icon=":material/resume:", width="stretch", disabled=status != "paused", on_click=request_resume,
+          key="btn_resume",
+          help=("Webcam/RTSP không tạm dừng được vì luồng vẫn chạy trong lúc dừng; bấm Dừng sẽ kết thúc phiên."
+                if is_live_source(source) else None))
 
 left, right = st.columns([2, 1], gap="large")
 with left:
@@ -151,72 +204,99 @@ def render_feed(feed):
     feed_ph.markdown(f"<br>**Xe vừa qua vạch**<div class='feed'>{rows}</div>", unsafe_allow_html=True)
 
 
-def render_downloads(last):
+def render_snapshot(snap, title):
+    render_stats(snap["by_class"], snap["in"], snap["out"], snap["fps"], title)
+    render_feed(snap["feed"])
+
+
+def render_downloads(snap):
     with after_ph.container():
         c1, c2, _ = st.columns([1, 1, 0.6])
         if c1.button("Xem trong Dashboard", icon=":material/monitoring:", width="stretch"):
             st.switch_page("views/dashboard.py")
-        out = last.get("output")
+        out = snap.get("output")
         if out and Path(out).exists():
             c2.download_button("Tải video kết quả", Path(out).read_bytes(), file_name=Path(out).name,
                                mime="video/mp4", icon=":material/download:", width="stretch")
 
 
-if not start:
-    try:
-        frame_ph.image(to_display(preview_with_line(first_frame(source), line)), width="stretch",
-                       caption="Xem trước vạch đếm — mũi tên chỉ chiều VÀO. Chỉnh vạch ở thanh bên trái.")
-    except RuntimeError as e:
-        frame_ph.error(str(e))
-
-    last = st.session_state.get("last_run")
-    if last:
-        render_stats(last["by_class"], last["in"], last["out"], last["fps"],
-                     f"Kết quả phiên gần nhất (#{last['session_id']})")
-        render_feed(last["feed"])
-        render_downloads(last)
+if status == "running":
+    # ---------------- Dang chay: doc tiep khung tu generator ----------------
+    feed, error = run["feed"], None
+    if run["snap"]:
+        render_snapshot(run["snap"], "Số liệu trực tiếp")
     else:
         render_stats({}, 0, 0, None)
+        render_feed(feed)
+    try:
+        for res in run["gen"]:
+            for e in res.new_events:
+                feed.appendleft((mmss(e.frame_idx / res.video_fps), e.class_name, e.track_id, e.direction))
+            disp = to_display(res.frame)
+            # Cap nhat anh chup TRUOC cac lenh st.*: bam Dung ngat vong lap tai lenh st.* ke tiep
+            run["snap"] = {
+                "session_id": res.session_id, "by_class": dict(res.by_class), "in": res.counts_in.total(),
+                "out": res.counts_out.total(), "fps": res.fps, "output": run["output"], "feed": list(feed),
+                "frame": disp, "frame_idx": res.frame_idx, "total_frames": res.total_frames,
+                "seconds": res.video_seconds, "total": res.total,
+            }
+            frame_ph.image(disp, width="stretch")
+            if res.total_frames:
+                progress_ph.progress(res.progress, text=f"Khung hình {res.frame_idx}/{res.total_frames} · "
+                                                        f"{mmss(res.video_seconds)}")
+            if res.new_events or res.frame_idx % 5 == 1:
+                render_stats(res.by_class, res.counts_in.total(), res.counts_out.total(), res.fps)
+            if res.new_events:
+                render_feed(feed)
+    except RuntimeError as e:
+        error = str(e)
+    except BaseException:
+        if run_holder().get("released"):  # tab da dong giua luc dang chay: dong phien roi moi thoat
+            run["gen"].close()
+        raise
+    run["gen"] = None  # generator da het (video ket thuc hoac loi): pipeline da dong phien trong khoi finally
+    if error:
+        run["status"], run["error"] = "error", error
+    elif run["snap"] is None:
+        run["status"], run["error"] = "error", "Nguồn video không có khung hình nào."
+    else:
+        run["status"], run["ended"] = "done", "video"
+    st.rerun()  # ve lai de cac nut doi trang thai
+
+elif status == "paused":
+    # ---------------- Tam dung: hien khung cuoi, so lieu, chua dong phien ----------------
+    snap = run["snap"]
+    frame_ph.image(snap["frame"], width="stretch")
+    if snap["total_frames"]:
+        progress_ph.progress(min(snap["frame_idx"] / snap["total_frames"], 1.0),
+                             text=f"Khung hình {snap['frame_idx']}/{snap['total_frames']} · {mmss(snap['seconds'])}")
+    render_snapshot(snap, f"Đã tạm dừng · phiên #{snap['session_id']}")
+    after_ph.info("Bấm **Tiếp tục** để chạy tiếp từ khung hình này. Phiên được lưu khi video kết thúc, khi đổi video "
+                  "hoặc khi rời trang này.", icon=":material/pause_circle:")
+
+else:
+    # ---------------- Chua chay / da xong / loi ----------------
+    if status == "error":
+        frame_ph.error(run["error"], icon=":material/error:")
+        render_stats({}, 0, 0, None)
         render_feed([])
-    st.stop()
-
-# ---------------- Chay pipeline ----------------
-pipe = TrafficPipeline(model=get_model(str(default_weights())), conf=conf, imgsz=imgsz, tracker=tracker, db=get_db())
-output = None
-if save_video:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    output = str(OUTPUT_DIR / f"ketqua_{datetime.now():%Y%m%d_%H%M%S}.mp4")
-
-feed = deque(maxlen=10)
-render_stats({}, 0, 0, None)
-render_feed(feed)
-res = None
-try:
-    for res in pipe.run(source, line, start_time=datetime.combine(d, t), output_path=output):
-        for e in res.new_events:
-            feed.appendleft((mmss(e.frame_idx / res.video_fps), e.class_name, e.track_id, e.direction))
-        # luu lien tuc de khi bam Dung van xem lai duoc ket qua
-        st.session_state["last_run"] = {
-            "session_id": res.session_id, "by_class": dict(res.by_class), "in": res.counts_in.total(),
-            "out": res.counts_out.total(), "fps": res.fps, "output": output, "feed": list(feed),
-        }
-        frame_ph.image(to_display(res.frame), width="stretch")
-        if res.total_frames:
-            progress_ph.progress(res.progress, text=f"Khung hình {res.frame_idx}/{res.total_frames} · "
-                                                    f"{mmss(res.video_seconds)}")
-        if res.new_events or res.frame_idx % 5 == 1:
-            render_stats(res.by_class, res.counts_in.total(), res.counts_out.total(), res.fps)
-        if res.new_events:
-            render_feed(feed)
-except RuntimeError as e:
-    st.error(str(e))
-    st.stop()
-
-if res is None:
-    st.warning("Nguồn video không có khung hình nào.")
-    st.stop()
-
-render_stats(res.by_class, res.counts_in.total(), res.counts_out.total(), res.fps, "Kết quả")
-progress_ph.success(f"Hoàn tất! Đã đếm **{res.total}** phương tiện trong {res.frame_idx} khung hình "
-                    f"(phiên #{res.session_id}).", icon=":material/task_alt:")
-render_downloads(st.session_state["last_run"])
+    else:
+        try:
+            frame_ph.image(to_display(preview_with_line(first_frame(source), line)), width="stretch",
+                           caption="Xem trước vạch đếm — mũi tên chỉ chiều VÀO. Chỉnh vạch ở thanh bên trái.")
+        except RuntimeError as e:
+            frame_ph.error(str(e), icon=":material/error:")
+        snap = run["snap"] if run else None
+        if snap:
+            if run["ended"] == "video":
+                msg = (f"Hoàn tất! Đã đếm **{snap['total']}** phương tiện trong {snap['frame_idx']} khung hình "
+                       f"(phiên #{snap['session_id']}).")
+            else:
+                msg = (f"Đã dừng và lưu phiên #{snap['session_id']}: {snap['total']} phương tiện trong "
+                       f"{snap['frame_idx']} khung hình.")
+            progress_ph.success(msg, icon=":material/task_alt:")
+            render_snapshot(snap, f"Kết quả phiên gần nhất (#{snap['session_id']})")
+            render_downloads(snap)
+        else:
+            render_stats({}, 0, 0, None)
+            render_feed([])
