@@ -66,6 +66,7 @@ Video / Webcam / RTSP
 │   ├── config.yaml           # model, ngưỡng, tracker, vạch đếm mặc định, đường dẫn DB
 │   └── dataset.yaml          # cấu hình bộ dữ liệu cho Ultralytics
 ├── models/vehicle_yolo26/    # kết quả huấn luyện (weights/best.pt, results.csv, biểu đồ)
+├── notebooks/                # Jupyter: khám phá dữ liệu, trình bày kết quả (chỉ gọi lại code sẵn có)
 ├── tests/                    # pytest (unit + tích hợp)
 ├── docs/                     # tài liệu tổng hợp dự án + hình minh hoạ
 ├── Data/                     # bộ dữ liệu + video + CSDL  (KHÔNG đưa lên GitHub, xem mục 3)
@@ -158,6 +159,22 @@ Các video `vn_*.mp4` tải từ [Pexels](https://www.pexels.com/license/) (mi�
 | `vn_cao_toc_flycam.mp4` | Quốc lộ quay từ flycam (góc trên cao) | [Pexels 32971521](https://www.pexels.com/video/aerial-view-of-traffic-on-busy-vietnamese-highway-32971521/) |
 
 Hai video cuối nằm ngoài phạm vi đề tài (camera không cố định / góc nhìn trên cao), dùng để minh hoạ giới hạn của mô hình.
+
+### Notebook trình bày (`notebooks/`)
+
+| Notebook | Nội dung |
+| --- | --- |
+| `01_kham_pha_du_lieu.ipynb` | Kiểm tra nhãn, số ảnh/box theo tập và lớp, mật độ xe, kích thước box, ảnh mẫu kèm nhãn |
+| `02_ket_qua_mo_hinh.ipynb` | mAP theo lớp, đường cong huấn luyện, train/valid/test, AP theo ngưỡng IoU, so với COCO pretrained, tracker, đếm tay, tốc độ |
+
+Notebook **không chứa logic riêng**: notebook 01 gọi `prepare_dataset.check()`, `make_figures.read_labels()` /
+`draw_gt()`; notebook 02 chỉ đọc các file JSON/CSV trong `models/vehicle_yolo26/` do các script ở mục 5 sinh ra.
+
+```bash
+pip install jupyterlab ipykernel
+python -m ipykernel install --sys-prefix   # để kernel "python3" dùng đúng Python của venv
+jupyter lab notebooks/
+```
 
 ## 6. Chạy từ dòng lệnh
 

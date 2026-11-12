@@ -17,3 +17,6 @@ onnxslim
 onnxruntime
 pytest
 httpx
+# notebook trinh bay (notebooks/, tuy chon)
+jupyterlab
+ipykernel
